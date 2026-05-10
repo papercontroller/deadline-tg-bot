@@ -70,6 +70,40 @@ func calendarKeyboard(year int, month time.Month) tgbotapi.InlineKeyboardMarkup 
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
+func timeKeyboard() tgbotapi.InlineKeyboardMarkup {
+	hours := []int{8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}
+	var rows [][]tgbotapi.InlineKeyboardButton
+	for i := 0; i < len(hours); i += 4 {
+		var row []tgbotapi.InlineKeyboardButton
+		for j := 0; j < 4 && i+j < len(hours); j++ {
+			h := hours[i+j]
+			label := fmt.Sprintf("%02d:00", h)
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData(label, fmt.Sprintf("time_hm:%02d00", h)))
+		}
+		rows = append(rows, row)
+	}
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("⏭ Skip — end of day (23:59)", "time_skip"),
+	))
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+func parseTimeHM(data string) (int, int, error) {
+	s := strings.TrimPrefix(data, "time_hm:")
+	if len(s) != 4 {
+		return 0, 0, fmt.Errorf("invalid time data")
+	}
+	h, err := strconv.Atoi(s[:2])
+	if err != nil {
+		return 0, 0, err
+	}
+	m, err := strconv.Atoi(s[2:])
+	if err != nil {
+		return 0, 0, err
+	}
+	return h, m, nil
+}
+
 func shiftMonth(year int, month time.Month, delta int) (int, time.Month) {
 	t := time.Date(year, month, 1, 0, 0, 0, 0, time.Local).AddDate(0, delta, 0)
 	return t.Year(), t.Month()
@@ -84,7 +118,7 @@ func parseCalDay(data string) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	return time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 0, 0, time.Local), nil
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local), nil
 }
 
 func parseCalNav(data string) (int, time.Month, error) {

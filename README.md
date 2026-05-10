@@ -8,7 +8,7 @@ A Telegram bot for tracking university deadlines. Built as an MVP for the Softwa
 - Pick dates via an inline calendar - no manual typing
 - List all upcoming deadlines sorted by date
 - Update or delete deadlines through button menus
-- Sends reminders at 24h and 3h before each deadline
+- Sends reminders at 24h and 12h before each deadline
 
 ## Stack
 

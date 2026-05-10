@@ -200,7 +200,7 @@ func HandleCallback(bot *tgbotapi.BotAPI, db *DB, cb *tgbotapi.CallbackQuery) {
 	case data == "cal_ignore":
 
 	case strings.HasPrefix(data, "cal_day:"):
-		deadline, err := parseCalDay(data)
+		date, err := parseCalDay(data)
 		if err != nil {
 			return
 		}
@@ -208,14 +208,39 @@ func HandleCallback(bot *tgbotapi.BotAPI, db *DB, cb *tgbotapi.CallbackQuery) {
 
 		switch state.Step {
 		case StepAddDate:
+			state.TempDate = date
+			state.Step = StepAddTime
+			setState(userID, state)
+			sendKb(bot, chatID, fmt.Sprintf("🕐 *%s* — pick a time:", date.Format("02.01.2006")), timeKeyboard())
+		case StepUpdateDate:
+			state.TempDate = date
+			state.Step = StepUpdateTime
+			setState(userID, state)
+			sendKb(bot, chatID, fmt.Sprintf("🕐 *%s* — pick a time:", date.Format("02.01.2006")), timeKeyboard())
+		}
+
+	case strings.HasPrefix(data, "time_hm:"), data == "time_skip":
+		var deadline time.Time
+		if data == "time_skip" {
+			deadline = time.Date(state.TempDate.Year(), state.TempDate.Month(), state.TempDate.Day(), 23, 59, 0, 0, time.Local)
+		} else {
+			h, m, err := parseTimeHM(data)
+			if err != nil {
+				return
+			}
+			deadline = time.Date(state.TempDate.Year(), state.TempDate.Month(), state.TempDate.Day(), h, m, 0, 0, time.Local)
+		}
+		deleteMsg(bot, chatID, msgID)
+
+		switch state.Step {
+		case StepAddTime:
 			if err := db.AddDeadline(userID, state.TempText, deadline); err != nil {
 				send(bot, chatID, "❌ Failed to save deadline.")
 			} else {
-				send(bot, chatID, fmt.Sprintf("✅ Added: *%s* - %s", state.TempText, deadline.Format("02.01.2006")))
+				send(bot, chatID, fmt.Sprintf("✅ Added: *%s* — %s", state.TempText, deadline.Format("02.01.2006 15:04")))
 			}
 			resetState(userID)
-
-		case StepUpdateDate:
+		case StepUpdateTime:
 			d, err := db.GetDeadlineByID(state.DeadlineID, userID)
 			if err != nil {
 				send(bot, chatID, "❌ "+err.Error())
@@ -225,7 +250,7 @@ func HandleCallback(bot *tgbotapi.BotAPI, db *DB, cb *tgbotapi.CallbackQuery) {
 			if err := db.UpdateDeadline(state.DeadlineID, userID, d.Text, deadline); err != nil {
 				send(bot, chatID, "❌ "+err.Error())
 			} else {
-				send(bot, chatID, fmt.Sprintf("✅ Updated: *%s* - %s", d.Text, deadline.Format("02.01.2006")))
+				send(bot, chatID, fmt.Sprintf("✅ Updated: *%s* — %s", d.Text, deadline.Format("02.01.2006 15:04")))
 			}
 			resetState(userID)
 		}

@@ -37,7 +37,7 @@ func InitDB(dsn string) (*DB, error) {
 			text         TEXT         NOT NULL,
 			deadline_at  TIMESTAMPTZ  NOT NULL,
 			reminded_24h BOOLEAN      DEFAULT FALSE,
-			reminded_3h  BOOLEAN      DEFAULT FALSE,
+			reminded_12h BOOLEAN      DEFAULT FALSE,
 			created_at   TIMESTAMPTZ  DEFAULT NOW()
 		)
 	`)
@@ -91,7 +91,7 @@ func (db *DB) DeleteAllDeadlines(userID int64) (int64, error) {
 func (db *DB) UpdateDeadline(id, userID int64, text string, deadlineAt time.Time) error {
 	res, err := db.Exec(`
 		UPDATE deadlines
-		SET text = $1, deadline_at = $2, reminded_24h = FALSE, reminded_3h = FALSE
+		SET text = $1, deadline_at = $2, reminded_24h = FALSE, reminded_12h = FALSE
 		WHERE id = $3 AND user_id = $4
 	`, text, deadlineAt, id, userID)
 	if err != nil {
@@ -174,8 +174,8 @@ func reminderColumn(flag string) string {
 	switch flag {
 	case "24h":
 		return "reminded_24h"
-	case "3h":
-		return "reminded_3h"
+	case "12h":
+		return "reminded_12h"
 	}
 	return ""
 }

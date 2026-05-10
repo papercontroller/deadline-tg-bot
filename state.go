@@ -11,16 +11,19 @@ const (
 	StepIdle Step = iota
 	StepAddText
 	StepAddDate
+	StepAddTime
 	StepUpdateSelect
 	StepUpdateField
 	StepUpdateText
 	StepUpdateDate
+	StepUpdateTime
 	StepDeleteSelect
 )
 
 type UserState struct {
 	Step        Step
 	TempText    string
+	TempDate    time.Time
 	DeadlineID  int64
 	CalYear     int
 	CalMonth    time.Month
