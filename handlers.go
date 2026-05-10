@@ -66,7 +66,7 @@ func HandleList(bot *tgbotapi.BotAPI, db *DB, msg *tgbotapi.Message, userID int6
 		default:
 			urgency = fmt.Sprintf(" (%d days)", daysLeft)
 		}
-		sb.WriteString(fmt.Sprintf("`#%d` *%s* - %s%s\n", d.ID, d.Text, d.DeadlineAt.Format("02.01.2006"), urgency))
+		sb.WriteString(fmt.Sprintf("*%s* — %s%s\n", d.Text, d.DeadlineAt.Format("02.01.2006"), urgency))
 	}
 	send(bot, msg.Chat.ID, sb.String())
 }
