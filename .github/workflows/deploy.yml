@@ -1,0 +1,26 @@
+name: Deploy to VDS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            cd ~/deadline-tg-bot
+            git pull origin main
+            /usr/local/go/bin/go build -o deadline-bot-new .
+            mv deadline-bot-new deadline-bot
+            sudo systemctl restart deadline-bot
+            sleep 2
+            sudo systemctl status deadline-bot --no-pager
