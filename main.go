@@ -33,6 +33,13 @@ func main() {
 	}
 	log.Printf("Bot started: @%s", bot.Self.UserName)
 
+	bot.Request(tgbotapi.NewSetMyCommands(
+		tgbotapi.BotCommand{Command: "add", Description: "Add a new deadline"},
+		tgbotapi.BotCommand{Command: "list", Description: "Show upcoming deadlines"},
+		tgbotapi.BotCommand{Command: "update", Description: "Edit a deadline"},
+		tgbotapi.BotCommand{Command: "delete", Description: "Delete deadlines"},
+	))
+
 	go StartReminder(bot, db)
 
 	u := tgbotapi.NewUpdate(0)

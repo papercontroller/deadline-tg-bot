@@ -2,13 +2,17 @@
 
 A Telegram bot for tracking university deadlines. Built as an MVP for the Software Development Case Study course at AITU.
 
+## Try it
+
+[@deadline_reminder_sanq_bot](https://t.me/deadline_reminder_sanq_bot)
+
 ## What it does
 
 - Add deadlines through a step-by-step conversational flow
-- Pick dates via an inline calendar - no manual typing
+- Pick dates via an inline calendar and time via buttons — no manual typing
 - List all upcoming deadlines sorted by date
-- Update or delete deadlines through button menus
-- Sends reminders at 24h and 12h before each deadline
+- Update or delete individual/multiple deadlines through button menus
+- Sends reminders at 24h, 12h, 6h, and 3h before each deadline
 
 ## Stack
 
@@ -28,7 +32,7 @@ A Telegram bot for tracking university deadlines. Built as an MVP for the Softwa
 
 ### 2. Install Go
 
-Download from https://go.dev/dl/ - version 1.25 or newer.
+Download from https://go.dev/dl/ — version 1.25 or newer.
 
 ### 3. Start PostgreSQL
 
@@ -38,7 +42,7 @@ The easiest way is Docker:
 docker run --name pg -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=deadlines -p 5432:5432 -d postgres:16
 ```
 
-Or if you have PostgreSQL installed locally, create the database in pgAdmin or via CLI:
+Or if you have PostgreSQL installed locally, create the database:
 
 ```bash
 psql -U postgres -c "CREATE DATABASE deadlines;"
@@ -64,7 +68,7 @@ go mod tidy
 go run .
 ```
 
-You should see `Bot started: @your_bot_name`. The database table is created automatically on first run.
+You should see `Bot started: @your_bot_name`. The database table is created automatically on first run via migrations.
 
 ---
 
@@ -72,26 +76,28 @@ You should see `Bot started: @your_bot_name`. The database table is created auto
 
 | Command | Description |
 |---|---|
-| `/start` | Show welcome message and command list |
 | `/add` | Add a new deadline (step-by-step) |
 | `/list` | Show all upcoming deadlines sorted by date |
 | `/update` | Edit a deadline (pick from list, then change text or date) |
-| `/delete` | Deletes your deadlines (asks for confirmation) |
+| `/delete` | Delete one, several, or all deadlines |
 
 ## How it works
 
 **`/add`**
 1. Bot asks for the deadline description
 2. You type it (e.g. "Math assignment")
-3. Bot shows an inline calendar - tap a day to confirm
+3. Bot shows an inline calendar — tap a day
+4. Bot shows time buttons — tap a time or skip for end of day (23:59)
 
 **`/update`**
-1. Bot shows your deadlines as buttons - tap the one to edit
+1. Bot shows your deadlines as buttons — tap the one to edit
 2. Choose what to change: text or date
-3. Type new text or pick a new date from the calendar
+3. Type new text or pick a new date and time
 
 **`/delete`**
-1. Bot asks for confirmation with Yes / Cancel buttons
+1. Bot shows your deadlines — tap to select/deselect
+2. Use "Select all" to select everything
+3. Tap "Delete (N)" to confirm
 
 ---
 
@@ -99,9 +105,23 @@ You should see `Bot started: @your_bot_name`. The database table is created auto
 
 The bot checks every hour and sends reminders:
 - **24 hours** before the deadline
-- **3 hours** before the deadline
+- **12 hours** before
+- **6 hours** before
+- **3 hours** before
 
 Each reminder is sent once. If delivery fails, the bot retries up to 3 times and will try again on the next hourly check.
+
+---
+
+## Migrations
+
+Schema changes are managed via SQL files in `migrations/`. On every startup the bot checks which migrations have been applied and runs any new ones automatically.
+
+To add a schema change — create a new file:
+
+```
+migrations/002_your_change.sql
+```
 
 ---
 
@@ -109,13 +129,15 @@ Each reminder is sent once. If delivery fails, the bot retries up to 3 times and
 
 ```sql
 CREATE TABLE deadlines (
-    id           BIGSERIAL PRIMARY KEY,
-    user_id      BIGINT      NOT NULL,
-    text         TEXT        NOT NULL,
-    deadline_at  TIMESTAMPTZ NOT NULL,
-    reminded_24h BOOLEAN     DEFAULT FALSE,
-    reminded_3h  BOOLEAN     DEFAULT FALSE,
-    created_at   TIMESTAMPTZ DEFAULT NOW()
+    id           BIGSERIAL    PRIMARY KEY,
+    user_id      BIGINT       NOT NULL,
+    text         TEXT         NOT NULL,
+    deadline_at  TIMESTAMPTZ  NOT NULL,
+    reminded_24h BOOLEAN      DEFAULT FALSE,
+    reminded_12h BOOLEAN      DEFAULT FALSE,
+    reminded_6h  BOOLEAN      DEFAULT FALSE,
+    reminded_3h  BOOLEAN      DEFAULT FALSE,
+    created_at   TIMESTAMPTZ  DEFAULT NOW()
 );
 ```
 
@@ -123,8 +145,8 @@ CREATE TABLE deadlines (
 
 ## Notes
 
-- No authentication - Telegram `user_id` is the only identifier
+- No authentication — Telegram `user_id` is the only identifier
 - Past deadlines are never shown in `/list`
 - Past days in the calendar are shown as `·` and are not selectable
-- `/delete` removes your deadlines (no undo)
-- Updating a deadline resets reminder flags so you get reminders again
+- `/delete` has no undo
+- Updating a deadline resets all reminder flags so you get reminders again

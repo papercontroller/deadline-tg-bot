@@ -17,6 +17,8 @@ type reminderSpec struct {
 var reminderSchedule = []reminderSpec{
 	{"24h", 24 * time.Hour, "24 hours"},
 	{"12h", 12 * time.Hour, "12 hours"},
+	{"6h", 6 * time.Hour, "6 hours"},
+	{"3h", 3 * time.Hour, "3 hours"},
 }
 
 func StartReminder(bot *tgbotapi.BotAPI, db *DB) {

@@ -30,19 +30,8 @@ func InitDB(dsn string) (*DB, error) {
 	if err := sqlDB.Ping(); err != nil {
 		return nil, fmt.Errorf("cannot connect to postgres: %w", err)
 	}
-	_, err = sqlDB.Exec(`
-		CREATE TABLE IF NOT EXISTS deadlines (
-			id           BIGSERIAL PRIMARY KEY,
-			user_id      BIGINT       NOT NULL,
-			text         TEXT         NOT NULL,
-			deadline_at  TIMESTAMPTZ  NOT NULL,
-			reminded_24h BOOLEAN      DEFAULT FALSE,
-			reminded_12h BOOLEAN      DEFAULT FALSE,
-			created_at   TIMESTAMPTZ  DEFAULT NOW()
-		)
-	`)
-	if err != nil {
-		return nil, err
+	if err := runMigrations(sqlDB); err != nil {
+		return nil, fmt.Errorf("migrations failed: %w", err)
 	}
 	return &DB{sqlDB}, nil
 }
@@ -91,7 +80,8 @@ func (db *DB) DeleteAllDeadlines(userID int64) (int64, error) {
 func (db *DB) UpdateDeadline(id, userID int64, text string, deadlineAt time.Time) error {
 	res, err := db.Exec(`
 		UPDATE deadlines
-		SET text = $1, deadline_at = $2, reminded_24h = FALSE, reminded_12h = FALSE
+		SET text = $1, deadline_at = $2,
+		    reminded_24h = FALSE, reminded_12h = FALSE, reminded_6h = FALSE, reminded_3h = FALSE
 		WHERE id = $3 AND user_id = $4
 	`, text, deadlineAt, id, userID)
 	if err != nil {
@@ -176,6 +166,10 @@ func reminderColumn(flag string) string {
 		return "reminded_24h"
 	case "12h":
 		return "reminded_12h"
+	case "6h":
+		return "reminded_6h"
+	case "3h":
+		return "reminded_3h"
 	}
 	return ""
 }
