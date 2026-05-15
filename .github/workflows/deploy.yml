@@ -17,6 +17,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           request_pty: true
+          command_timeout: 5m
           script: |
             set -e
             cd ~/deadline-tg-bot
@@ -24,6 +25,4 @@ jobs:
             /usr/local/go/bin/go build -o deadline-bot-new .
             mv deadline-bot-new deadline-bot
             sudo systemctl restart deadline-bot
-            sleep 2
-            sudo systemctl status deadline-bot --no-pager
-            
+            echo "Deploy finished"
