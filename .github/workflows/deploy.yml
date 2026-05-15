@@ -6,9 +6,31 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  test:
+    name: Build & Vet
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build -o /tmp/deadline-bot-test .
+
+  deploy:
+    name: Deploy to VDS
+    needs: test
+    runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -26,3 +48,4 @@ jobs:
             mv deadline-bot-new deadline-bot
             sudo systemctl restart deadline-bot
             echo "Deploy finished"
+            
