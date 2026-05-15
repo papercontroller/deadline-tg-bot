@@ -8,6 +8,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -15,6 +16,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          request_pty: true
           script: |
             set -e
             cd ~/deadline-tg-bot
@@ -24,3 +26,4 @@ jobs:
             sudo systemctl restart deadline-bot
             sleep 2
             sudo systemctl status deadline-bot --no-pager
+            
